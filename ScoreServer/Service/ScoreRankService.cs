@@ -11,6 +11,8 @@ namespace ScoreServer.Service
 
         private readonly SortedSet<CustomerScore> _leaderBoard = new(new CustomerScoreComparer());
 
+        private readonly object _lockObject = new();
+
         private const decimal _minScore = -1000;
         private const decimal _maxScore = 1000;
 
@@ -46,7 +48,7 @@ namespace ScoreServer.Service
 
                 if (isUpdateScoreSuccess)
                 {
-                    UpdateLeaderBoard(customerId, score);
+                    UpdateLeaderBoard(customerId, score, tempScore);
 
                     return score;
                 }
@@ -60,23 +62,37 @@ namespace ScoreServer.Service
             }
         }
 
-        private void UpdateLeaderBoard(long customerId, decimal score)
+        private void UpdateLeaderBoard(long customerId, decimal score, decimal beforeScore)
         {
-            var existingCustomer = _leaderBoard.FirstOrDefault(c => c.CustomerId == customerId);
-            if (existingCustomer != null)
+            try
             {
-                _leaderBoard.Remove(existingCustomer);
-            }
-            if (score > 0)
-            {
-                _leaderBoard.Add(new CustomerScore(customerId, score));
-            }
+                lock (_lockObject)
+                {
+                    var existingCustomer = _leaderBoard.FirstOrDefault(c => c.CustomerId == customerId);
+                    if (existingCustomer != null)
+                    {
+                        _leaderBoard.Remove(existingCustomer);
+                    }
+                    if (score > 0)
+                    {
+                        _leaderBoard.Add(new CustomerScore(customerId, score));
+                    }
 
-            int rank = 1;
-            foreach (var customer in _leaderBoard)
+                    int rank = 1;
+                    foreach (var customer in _leaderBoard)
+                    {
+                        customer.Rank = rank;
+                        rank++;
+                    }
+                }
+            }
+            catch (Exception ex)
             {
-                customer.Rank = rank;
-                rank++;
+                throw new Exception($"Update leaderboard error: {ex.Message}");
+            }
+            finally
+            {
+                _customerScoreDic.TryUpdate(customerId, beforeScore, score);
             }
         }
 
