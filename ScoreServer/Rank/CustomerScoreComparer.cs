@@ -15,33 +15,16 @@ namespace ScoreServer.Rank
                 return 1;
             }
 
-            long xId = x.CustomerId;
-            long yId = y.CustomerId;
-            int xDigit, yDigit;
-            for (int i = 0; i < sizeof(long); i++)
+            if (x.CustomerId > y.CustomerId)
             {
-                xDigit = GetDigit(xId, i);
-                yDigit = GetDigit(yId, i);
-
-                if (xDigit < yDigit)
-                {
-                    return -1;
-                }
-                else if (xDigit > yDigit)
-                {
-                    return 1;
-                }
+                return 1;
+            }
+            else if (x.CustomerId < y.CustomerId)
+            {
+                return -1;
             }
 
             return 0;
-        }
-
-        private static int GetDigit(long num, int digitIndex)
-        {
-            long mask = (long)Math.Pow(10, digitIndex + 1);
-            long digit = num % mask;
-            digit /= (long)Math.Pow(10, digitIndex);
-            return (int)digit;
         }
     }
 }

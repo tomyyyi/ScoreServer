@@ -33,8 +33,7 @@ namespace ScoreServer.Service
             int retryCount = 10;
             while (true)
             {
-                bool isUpdateScoreSuccess = false;
-
+                bool isUpdateScoreSuccess;
                 if (_customerScoreDic.TryGetValue(customerId, out decimal tempScore))
                 {
                     score = tempScore + score;
@@ -81,16 +80,16 @@ namespace ScoreServer.Service
             }
         }
 
-        public async Task<List<CustomerScore>> GetCustomersByRank(int? start, int? end)
+        public Task<List<CustomerScore>> GetCustomersByRank(int? start, int? end)
         {
             var count = _leaderBoard.Count;
             if (!start.HasValue || start < 1) start = 1;
             if (!end.HasValue || end > count) end = count;
-            if (start > end) return new List<CustomerScore>();
-            return _leaderBoard.Skip(start.Value - 1).Take(end.Value - start.Value + 1).ToList();
+            if (start > end) return Task.FromResult(new List<CustomerScore>());
+            return Task.FromResult(_leaderBoard.Skip(start.Value - 1).Take(end.Value - start.Value + 1).ToList());
         }
 
-        public async Task<List<CustomerScore>> GetCustomersByCustomerIdAndAroundRank(long customerId, int aboveRank = 0, int belowRank = 0)
+        public Task<List<CustomerScore>> GetCustomersByCustomerIdAndAroundRank(long customerId, int aboveRank = 0, int belowRank = 0)
         {
             if (customerId <= 0)
             {
@@ -107,9 +106,9 @@ namespace ScoreServer.Service
             var endRank = rank + belowRank;
             if (endRank > count) endRank = count;
 
-            if (startRank > endRank) return new List<CustomerScore>();
+            if (startRank > endRank) return Task.FromResult(new List<CustomerScore>());
 
-            return _leaderBoard.Skip(startRank - 1).Take(endRank - startRank + 1).ToList();
+            return Task.FromResult(_leaderBoard.Skip(startRank - 1).Take(endRank - startRank + 1).ToList());
         }
 
     }
