@@ -88,11 +88,8 @@ namespace ScoreServer.Service
             }
             catch (Exception ex)
             {
-                throw new Exception($"Update leaderboard error: {ex.Message}");
-            }
-            finally
-            {
                 _customerScoreDic.TryUpdate(customerId, beforeScore, score);
+                throw new Exception($"Update leaderboard error: {ex.Message}");
             }
         }
 
