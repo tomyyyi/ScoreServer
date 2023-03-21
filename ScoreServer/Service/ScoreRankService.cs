@@ -11,7 +11,7 @@ namespace ScoreServer.Service
 
         private readonly SortedSet<CustomerScore> _leaderBoard = new(new CustomerScoreComparer());
 
-        private readonly object _lockObject = new();
+        private int _lock = 0;
 
         private const decimal _minScore = -1000;
         private const decimal _maxScore = 1000;
@@ -66,25 +66,28 @@ namespace ScoreServer.Service
         {
             try
             {
-                lock (_lockObject)
+                while (Interlocked.CompareExchange(ref _lock, 1, 0) == 1)
                 {
-                    var existingCustomer = _leaderBoard.FirstOrDefault(c => c.CustomerId == customerId);
-                    if (existingCustomer != null)
-                    {
-                        _leaderBoard.Remove(existingCustomer);
-                    }
-                    if (score > 0)
-                    {
-                        _leaderBoard.Add(new CustomerScore(customerId, score));
-                    }
-
-                    int rank = 1;
-                    foreach (var customer in _leaderBoard)
-                    {
-                        customer.Rank = rank;
-                        rank++;
-                    }
+                    Task.Delay(1);
                 }
+
+                var existingCustomer = _leaderBoard.FirstOrDefault(c => c.CustomerId == customerId);
+                if (existingCustomer != null)
+                {
+                    _leaderBoard.Remove(existingCustomer);
+                }
+                if (score > 0)
+                {
+                    _leaderBoard.Add(new CustomerScore(customerId, score));
+                }
+
+                int rank = 1;
+                foreach (var customer in _leaderBoard)
+                {
+                    customer.Rank = rank;
+                    rank++;
+                }
+                Interlocked.Exchange(ref _lock, 0);
             }
             catch (Exception ex)
             {
