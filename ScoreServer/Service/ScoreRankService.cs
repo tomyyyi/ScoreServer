@@ -58,7 +58,7 @@ namespace ScoreServer.Service
                 {
                     throw new BadHttpRequestException("update score failed, please retry");
                 }
-                await Task.Delay(10);
+                await Task.Delay(1);
             }
         }
 
